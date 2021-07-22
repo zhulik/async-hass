@@ -9,14 +9,14 @@ RSpec.describe Async::Hass do
     token = ENV.fetch("HASS_TOKEN")
     url = ENV.fetch("HASS_URL")
 
-    hass = Async::Hass::Hass.new(url, token)
-    hass.get_states
+    api = Async::Hass::API.new(url, token)
+    api.get_states
 
     reactor.with_timeout(5) do
-      hass.subscribe("state_changed") do |subscription, _event|
+      api.subscribe("state_changed") do |subscription, _event|
         break subscription.unsubscribe
       end
     end
-    hass.disconnect
+    api.disconnect
   end
 end

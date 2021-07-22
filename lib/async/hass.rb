@@ -8,10 +8,11 @@ require "async/notification"
 
 require "async/hass/version"
 require "async/hass/client"
-require "async/hass/hass"
+require "async/hass/api"
 require "async/hass/event_subscription"
 
 module Async
+  # TODO: rename to HASS
   module Hass
     class Error < StandardError; end
     # Your code goes here...

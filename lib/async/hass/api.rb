@@ -2,7 +2,7 @@
 
 module Async
   module Hass
-    class Hass
+    class API
       extend Forwardable
 
       def_delegators :@client, :connect, :disconnect, :requests
