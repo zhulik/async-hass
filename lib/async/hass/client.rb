@@ -7,7 +7,7 @@ module Async
         @token = token
         @endpoint = Async::HTTP::Endpoint.parse(url, alpn_protocols: Async::HTTP::Protocol::HTTP11.names)
         @requests = {}
-        @query_queue = ::Async::Queue.new
+        @request_queue = ::Async::Queue.new
       end
 
       def connect # rubocop:disable Metrics/MethodLength
@@ -23,7 +23,7 @@ module Async
 
         @tasks_barrier = ::Async::Barrier.new(parent: @task)
 
-        @tasks_barrier.async { query_task }
+        @tasks_barrier.async { request_task }
         @tasks_barrier.async { response_task }
         @authencated_notification.wait
       rescue StandardError
@@ -49,7 +49,7 @@ module Async
           raise "ResourceLeakError",
                 "ongoing requests list is not empty: #{@requests.count} items"
         end
-        raise "ResourceLeakError", "query queue empty: #{@query.count} items" unless @query_queue.empty?
+        raise "ResourceLeakError", "query queue empty: #{@request_queue.count} items" unless @request_queue.empty?
       end
 
       def connected?
@@ -65,16 +65,15 @@ module Async
           message = message.merge(id: id)
           @requests[id] = Async::Notification.new
         end
-        @query_queue << message
+        @request_queue << message
         @requests[id] # Returns nil if id is not passed
       end
 
       private
 
-      def query_task
-        @query_queue.each do |query|
-          p(query)
-          @connection.write(query)
+      def request_task
+        @request_queue.each do |request|
+          @connection.write(request)
           @connection.flush
         end
       rescue StandardError
