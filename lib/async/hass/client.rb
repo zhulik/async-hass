@@ -10,8 +10,12 @@ module Async
         @query_queue = ::Async::Queue.new
       end
 
-      def connect
+      def connect # rubocop:disable Metrics/MethodLength
+        # TODO: gracefully handle disconnects on every stage of the work
         raise "AlreadyConnectedError" if connected?
+
+        @aithenticated = false
+        @authencated_notification = Async::Notification.new
 
         @client = ::Async::WebSocket::Client.open(@endpoint)
         @connection = @client.connect(@endpoint.authority, @endpoint.path)
@@ -21,6 +25,7 @@ module Async
 
         @tasks_barrier.async { query_task }
         @tasks_barrier.async { response_task }
+        @authencated_notification.wait
       rescue StandardError
         raise "ConnectionError"
       end
@@ -52,18 +57,23 @@ module Async
       end
 
       def authenticated?
-        @@authenticated.nil?
+        @authenticated.nil?
       end
 
-      def submit(message, add_id: true)
-        message = message.merge(id: next_id) if add_id
+      def submit(message, id: next_id)
+        if id
+          message = message.merge(id: id)
+          @requests[id] = Async::Notification.new
+        end
         @query_queue << message
+        @requests[id] # Returns nil if id is not passed
       end
 
       private
 
       def query_task
         @query_queue.each do |query|
+          p(query)
           @connection.write(query)
           @connection.flush
         end
@@ -74,16 +84,16 @@ module Async
       def response_task # rubocop:disable Metrics/MethodLength
         loop do
           message = @connection.read
-          case message[:type] # TODO: pattern matching?
-          when "auth_required"
-            submit({ type: "auth", access_token: @token }, add_id: false)
-          when "auth_ok"
+          case message # TODO: pattern matching?
+          in {type: "auth_required"}
+            submit({ type: "auth", access_token: @token }, id: nil)
+          in {type: "auth_ok"}
             @authenticated = true
-            next
-          when "auth_invalid"
+            @authencated_notification.signal
+          in {type: "auth_invalid"}
             raise "InvalidAuth"
-          else
-            p message
+          in {type: "result", success: true, result: result, id: id}
+            @requests.delete(id).signal(result)
           end
         end
       rescue StandardError

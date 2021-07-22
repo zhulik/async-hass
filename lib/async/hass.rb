@@ -4,6 +4,7 @@ require "async/websocket/client"
 require "async/http/endpoint"
 require "async/queue"
 require "async/barrier"
+require "async/notification"
 
 require "async/hass/version"
 require "async/hass/client"
