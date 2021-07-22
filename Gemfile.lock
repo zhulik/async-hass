@@ -36,6 +36,7 @@ GEM
       fiber-local
     diff-lcs (1.4.4)
     docile (1.4.0)
+    dotenv (2.7.6)
     fiber-local (1.0.0)
     iniparse (1.5.0)
     nio4r (2.5.7)
@@ -110,6 +111,7 @@ PLATFORMS
 DEPENDENCIES
   async-hass!
   async-rspec
+  dotenv
   overcommit
   rake (~> 12.0)
   rspec (~> 3.0)

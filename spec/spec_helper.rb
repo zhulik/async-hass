@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
+ENV["ENVIRONMENT"] ||= "test"
+
 require "bundler/setup"
 require "async/hass"
 
 require "async/rspec"
+
+require "dotenv"
+Dotenv.load(".env.test.local", ".env.local", ".env.test", ".env")
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

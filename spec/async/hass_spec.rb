@@ -7,7 +7,7 @@ RSpec.describe Async::Hass do
 
   it "does something useful" do
     token = ENV.fetch("HASS_TOKEN")
-    url = "https://hass.home.zhulik.wtf/api/websocket"
+    url = ENV.fetch("HASS_URL")
 
     client = Async::Hass::Client.new(url, token)
     client.connect
