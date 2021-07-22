@@ -12,7 +12,10 @@ RSpec.describe Async::Hass do
     client = Async::Hass::Client.new(url, token)
     client.connect
 
-    p client.submit({ type: "get_states" }).wait
+    client.submit({ type: "get_states" }).each do |result|
+      p result
+      break
+    end
     reactor.sleep(1)
     client.disconnect
   end

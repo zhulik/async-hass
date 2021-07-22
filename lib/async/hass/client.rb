@@ -63,7 +63,7 @@ module Async
       def submit(message, id: next_id)
         if id
           message = message.merge(id: id)
-          @requests[id] = Async::Notification.new
+          @requests[id] = Async::Queue.new
         end
         @request_queue << message
         @requests[id] # Returns nil if id is not passed
@@ -92,7 +92,7 @@ module Async
           in {type: "auth_invalid"}
             raise "InvalidAuth"
           in {type: "result", success: true, result: result, id: id}
-            @requests.delete(id).signal(result)
+            @requests.delete(id) << result
           end
         end
       rescue StandardError
