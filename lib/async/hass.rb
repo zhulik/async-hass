@@ -8,6 +8,7 @@ require "async/notification"
 
 require "async/hass/version"
 require "async/hass/client"
+require "async/hass/hass"
 
 module Async
   module Hass

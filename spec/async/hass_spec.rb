@@ -9,14 +9,10 @@ RSpec.describe Async::Hass do
     token = ENV.fetch("HASS_TOKEN")
     url = ENV.fetch("HASS_URL")
 
-    client = Async::Hass::Client.new(url, token)
-    client.connect
+    hass = Async::Hass::Hass.new(url, token)
+    hass.get_states
 
-    client.submit({ type: "get_states" }).each do |result|
-      p result
-      break
-    end
     reactor.sleep(1)
-    client.disconnect
+    hass.disconnect
   end
 end

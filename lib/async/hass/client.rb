@@ -3,7 +3,8 @@
 module Async
   module Hass
     class Client
-      def initialize(url, token)
+      def initialize(url, token, task: Task.current)
+        @task = task
         @token = token
         @endpoint = Async::HTTP::Endpoint.parse(url, alpn_protocols: Async::HTTP::Protocol::HTTP11.names)
         @requests = {}
