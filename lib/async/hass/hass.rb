@@ -17,6 +17,12 @@ module Async
           return response
         end
       end
+
+      def subscribe(event_type, &block)
+        # TODO: unsubscribe from all subscriptions on disconnect
+        id, queue = @client.submit({ type: "subscribe_events", event_type: event_type })
+        EventSubscription.new(id, queue, @client).each(&block)
+      end
     end
   end
 end

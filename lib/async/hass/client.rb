@@ -7,13 +7,14 @@ module Async
         @task = task
         @token = token
         @endpoint = Async::HTTP::Endpoint.parse(url, alpn_protocols: Async::HTTP::Protocol::HTTP11.names)
-        @requests = {}
-        @request_queue = ::Async::Queue.new
       end
 
-      def connect # rubocop:disable Metrics/MethodLength
+      def connect # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         # TODO: gracefully handle disconnects on every stage of the work
         raise "AlreadyConnectedError" if connected?
+
+        @requests = {}
+        @request_queue = ::Async::Queue.new
 
         @aithenticated = false
         @authencated_notification = Async::Notification.new
@@ -51,6 +52,9 @@ module Async
                 "ongoing requests list is not empty: #{@requests.count} items"
         end
         raise "ResourceLeakError", "query queue empty: #{@request_queue.count} items" unless @request_queue.empty?
+
+        @requests_queue = nil
+        @requests = nil
       end
 
       def connected?
@@ -64,10 +68,10 @@ module Async
       def submit(message, id: next_id)
         if id
           message = message.merge(id: id)
-          @requests[id] = Async::Queue.new
+          @requests[id] = { queue: Async::Queue.new, message: message }
         end
         @request_queue << message
-        @requests[id] # Returns nil if id is not passed
+        [id, @requests.dig(id, :queue)] # Returns nils if id is nil
       end
 
       private
@@ -81,10 +85,10 @@ module Async
         raise "DisconnectError"
       end
 
-      def response_task # rubocop:disable Metrics/MethodLength
+      def response_task # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         loop do
           message = @connection.read
-          case message # TODO: pattern matching?
+          case message
           in {type: "auth_required"}
             submit({ type: "auth", access_token: @token }, id: nil)
           in {type: "auth_ok"}
@@ -93,7 +97,14 @@ module Async
           in {type: "auth_invalid"}
             raise "InvalidAuth"
           in {type: "result", success: true, result: result, id: id}
-            @requests.delete(id) << result
+            request = @requests[id]
+            next if request.dig(:message, :type) == "subscribe_events"
+
+            @requests.delete(request.dig(:message, :subscription)) if request.dig(:message,
+                                                                                  :type) == "unsubscribe_events"
+            @requests.delete(id)[:queue] << result
+          in {type: "event", event: {data: data}, id: id}
+            @requests.dig(id, :queue) << data
           end
         end
       rescue StandardError
@@ -101,7 +112,7 @@ module Async
       end
 
       def next_id
-        @current_id + +
+        @current_id += 1
         @current_id
       end
     end

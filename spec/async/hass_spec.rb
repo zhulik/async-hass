@@ -12,7 +12,11 @@ RSpec.describe Async::Hass do
     hass = Async::Hass::Hass.new(url, token)
     hass.get_states
 
-    reactor.sleep(1)
+    reactor.with_timeout(5) do
+      hass.subscribe("state_changed") do |subscription, _event|
+        break subscription.unsubscribe
+      end
+    end
     hass.disconnect
   end
 end
