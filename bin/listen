@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "async/hass"
+
+require "dotenv"
+Dotenv.load(".env.development.local", ".env.local", ".env.development", ".env")
+
+Async do |task|
+  token = ENV.fetch("HASS_TOKEN")
+  url = ENV.fetch("HASS_URL")
+
+  hass = Async::Hass::HASS.new(url, token)
+
+  task.sleep(100)
+ensure
+  hass.disconnect
+end

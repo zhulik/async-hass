@@ -9,6 +9,7 @@ require "async/notification"
 require "async/hass/version"
 require "async/hass/client"
 require "async/hass/api"
+require "async/hass/hass"
 require "async/hass/event_subscription"
 
 module Async

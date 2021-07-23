@@ -9,14 +9,12 @@ module Async
         @client = client
       end
 
-      def each
-        @queue.each do |event|
-          yield self, event
-        end
+      def each(&block)
+        @queue.each(&block)
       end
 
       def unsubscribe
-        # TODO: raise an exception and catch  it in Hass#subscribe to gracefully exit the `subscribe` block
+        # TODO: raise an exception and catch it in Hass#subscribe to gracefully exit the `subscribe` block
         _, queue = @client.submit({ type: "unsubscribe_events", subscription: @id })
         queue.each do # rubocop:disable Lint/UnreachableLoop
           break
