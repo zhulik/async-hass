@@ -11,9 +11,9 @@ Async do |task|
   token = ENV.fetch("HASS_TOKEN")
   url = ENV.fetch("HASS_URL")
 
-  hass = Async::Hass::HASS.new(url, token)
+  hass = Async::Hass::HASS.new(url, token, task: task)
 
-  task.sleep(100)
+  hass.wait
 ensure
   hass.disconnect
 end

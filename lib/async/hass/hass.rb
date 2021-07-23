@@ -3,12 +3,16 @@
 module Async
   module Hass
     class HASS
+      # TODO: add reconnects with retries
+      # TODO: extract State
       def initialize(url, token, task: Task.current)
         @api = API.new(url, token, task: task)
         @task = task
-        @tasks_barrier = ::Async::Barrier.new(parent: @task)
-        @tasks_barrier.async { update_states_task }
-        @states = @api.get_states.group_by { |state| state[:entity_id] }.transform_values { |v| v[0] }
+        connect
+      end
+
+      def wait
+        @tasks_barrier.wait
       end
 
       def disconnect
@@ -16,6 +20,15 @@ module Async
         @tasks_barrier.wait
         @tasks_barrier = nil
         @api.disconnect
+      end
+
+      private
+
+      def connect
+        @tasks_barrier = ::Async::Barrier.new(parent: @task)
+        @tasks_barrier.async { update_states_task }
+        @states = @api.get_states.group_by { |state| state[:entity_id] }.transform_values { |v| v[0] }
+        p("States received")
       end
 
       def update_states_task
